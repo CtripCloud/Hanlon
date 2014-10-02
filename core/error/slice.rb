@@ -42,6 +42,10 @@ module ProjectHanlon
           [ 'InvalidMaximumCount'       , 161 , {'@http_err'=> :bad_request}            , ''          , 'ProjectHanlon::Error::Slice::Generic' ],
           [ 'MissingBrokerMetadata'     , 162 , {'@http_err'=> :bad_request}            , ''          , 'ProjectHanlon::Error::Slice::Generic' ],
           [ 'InvalidBrokerMetadata'     , 163 , {'@http_err'=> :bad_request}            , ''          , 'ProjectHanlon::Error::Slice::Generic' ],
+          [ 'InvalidVModelTemplate'     , 164 , {'@http_err'=> :bad_request}            , ''          , 'ProjectHanlon::Error::Slice::Generic' ],
+          [ 'MissingVModelMetadata'     , 165 , {'@http_err'=> :bad_request}            , ''          , 'ProjectHanlon::Error::Slice::Generic' ],
+          [ 'InvalidVModelMetadata'     , 166 , {'@http_err'=> :bad_request}            , ''          , 'ProjectHanlon::Error::Slice::Generic' ],
+          [ 'InvalidVModel'             , 167 , {'@http_err'=> :bad_request}            , ''          , 'ProjectHanlon::Error::Slice::Generic' ],
       ].each do |err|
         ProjectHanlon::ErrorFactory.create_class *err
       end

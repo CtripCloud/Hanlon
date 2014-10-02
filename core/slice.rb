@@ -6,6 +6,7 @@
 require 'forwardable'
 require 'require_all'
 require 'helpers/http_helper'
+require 'uri'
 
 # @todo danielp 2012-10-24: this shouldn't include the database tooling.
 class ProjectHanlon::Slice < ProjectHanlon::Object
@@ -639,9 +640,9 @@ class ProjectHanlon::Slice < ProjectHanlon::Object
   def add_uri_to_object_hash(object_hash, field_name="@uuid", additional_uri_path = nil)
     noun = object_hash["@noun"]
     if additional_uri_path
-      object_hash["@uri"] = "#{@uri_root}/#{noun}/#{additional_uri_path}/#{object_hash[field_name]}"
+      object_hash["@uri"] = URI.encode("#{@uri_root}/#{noun}/#{additional_uri_path}/#{object_hash[field_name]}")
     else
-      object_hash["@uri"] = "#{@uri_root}/#{noun}/#{object_hash[field_name]}"
+      object_hash["@uri"] = URI.encode("#{@uri_root}/#{noun}/#{object_hash[field_name]}")
     end
     object_hash.each do |k, v|
       if object_hash[k].class == Array

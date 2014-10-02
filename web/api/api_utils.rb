@@ -164,6 +164,9 @@ module Hanlon
                 elsif slice.class.to_s == 'ProjectHanlon::Slice::Model'
                   key_field = "@name"
                   additional_uri_str = "templates"
+                elsif slice.class.to_s == 'ProjectHanlon::Slice::VModel'
+                  key_field = "@name"
+                  additional_uri_str = "templates"
                 elsif slice.class.to_s == 'ProjectHanlon::Slice::Policy'
                   key_field = "@template"
                   additional_uri_str = "templates"

@@ -11,6 +11,7 @@ module Hanlon
       mount ::Hanlon::WebService::Image::APIv1
       mount ::Hanlon::WebService::Node::APIv1
       mount ::Hanlon::WebService::Model::APIv1
+      mount ::Hanlon::WebService::VModel::APIv1
       mount ::Hanlon::WebService::Tag::APIv1
       mount ::Hanlon::WebService::Policy::APIv1
       mount ::Hanlon::WebService::Broker::APIv1
