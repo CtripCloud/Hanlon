@@ -10,6 +10,7 @@ module ProjectHanlon
       attr_accessor :label
       attr_accessor :enabled
       attr_accessor :model
+      attr_accessor :vmodel
       attr_accessor :broker
       attr_accessor :tags
       attr_accessor :maximum_count
@@ -71,7 +72,8 @@ module ProjectHanlon
 
       def bind_me(node)
         if node
-          @model.counter = @model.counter + 1 # increment model counter
+          @model.counter = @model.counter + 1 if @model # increment model counter
+          @vmodel.counter = @vmodel.counter + 1 if @vmodel # increment vmodel counter
           self.update_self # save increment
           @bound = true
           @noun = "active_model"
@@ -108,26 +110,39 @@ module ProjectHanlon
 
       def print_header
         if @bound
-          return "Label", "State", "Node UUID", "Broker", "Bind #", "UUID"
+          return "Label", "VModel State", "Model State", "Node UUID", "Broker", "Bind #", "UUID"
         else
           if @is_template
             return "Template", "Description"
           else
-            return "#", "Enabled", "Label", "Tags", "Model Label", "#/Max", "Counter", "UUID"
+            return "#", "Enabled", "Label", "Tags", "VModel Label", "Model Label", "#/Max", "Counter", "UUID"
           end
         end
+      end
+
+      def counter
+        tmp_model = @vmodel || @model
+        tmp_model ? tmp_model.counter.to_s : 'N/A'
       end
 
       def print_items
         if @bound
           broker_name = @broker ? @broker.name : "none"
-          return @label, @model.current_state.to_s, @node_uuid, broker_name, @model.counter.to_s, @uuid
+          vmodel_state = @vmodel ? @vmodel.current_state.to_s : "N/A"
+          if @vmodel && @vmodel.current_state != @vmodel.final_state
+            model_state = "N/A"
+          else
+            model_state = @model ? @model.current_state.to_s : "N/A"
+          end
+          return @label, vmodel_state, model_state, @node_uuid, broker_name, counter, @uuid
         else
           if @is_template
             return @template.to_s, @description.to_s
           else
+            vmodel_label = @vmodel ? @vmodel.label.to_s : 'none'
+            model_label = @model ? @model.label.to_s : 'none'
             max_num = @maximum_count.to_i == 0 ? '-' : @maximum_count
-            return line_number.to_s, @enabled.to_s, @label, "[#{@tags.join(",")}]", @model.label.to_s, "#{current_count.to_s}/#{max_num}", @model.counter.to_s, @uuid
+            return line_number.to_s, @enabled.to_s, @label, "[#{@tags.join(",")}]", @model.label.to_s, "#{current_count.to_s}/#{max_num}", counter.to_s, @uuid
           end
         end
       end
@@ -138,6 +153,8 @@ module ProjectHanlon
            "Label",
            "Template",
            "Node UUID",
+           "VModel Label",
+           "VModel Name",
            "Model Label",
            "Model Name",
            "Current State",
@@ -152,6 +169,7 @@ module ProjectHanlon
            "Template",
            "Description",
            "Tags",
+           "VModel Label",
            "Model Label",
            "Broker Target",
            "Currently Bound",
@@ -160,21 +178,36 @@ module ProjectHanlon
         end
       end
 
+      def current_state
+        if @vmodel && @vmodel.current_state != @vmodel.final_state
+          @vmodel.current_state.to_s
+        elsif @model
+          @model.current_state.to_s
+        else
+          'N/A'
+        end
+      end
+
       def print_item
+        broker_name = @broker ? @broker.name : "none"
+        vmodel_label = @vmodel ? @vmodel.label.to_s : "none"
+        model_label = @model ? @model.label.to_s : "none"
         if @bound
-          broker_name = @broker ? @broker.name : "none"
+          vmodel_name = @vmodel ? @vmodel.name.to_s : "none"
+          model_name = @model ? @model.name.to_s : "none"
           [@uuid,
            @label,
            @template.to_s,
            @node_uuid,
-           @model.label.to_s,
-           @model.name.to_s,
-           @model.current_state.to_s,
+           vmodel_label,
+           vmodel_name,
+           model_label,
+           model_name,
+           current_state,
            broker_name,
-           @model.counter.to_s,
+           counter.to_s,
            Time.at(@bind_timestamp).strftime("%H:%M:%S %m-%d-%Y")]
         else
-          broker_name = @broker ? @broker.name : "none"
           [@uuid,
            line_number.to_s,
            @label,
@@ -182,11 +215,12 @@ module ProjectHanlon
            @template.to_s,
            @description,
            "[#{@tags.join(", ")}]",
-           @model.label.to_s,
+           vmodel_label,
+           model_label,
            broker_name,
            current_count.to_s,
            @maximum_count.to_s,
-           @model.counter.to_s]
+           current_count]
         end
       end
 
@@ -213,20 +247,23 @@ module ProjectHanlon
         attr_array = []
         # Take each element in our attributes_hash and store as a HashPrint object in our array
         @last_time = nil
-        @model.log.each do
-        |log_entry|
-          @first_time ||= Time.at(log_entry["timestamp"])
-          @last_time ||= Time.at(log_entry["timestamp"])
-          @total_time_diff = (Time.at(log_entry["timestamp"].to_i) - @first_time)
-          @last_time_diff = (Time.at(log_entry["timestamp"].to_i) - @last_time)
-          attr_array << self.class.const_get(:HashPrint).new(%w(State Action Result Time Last Total Node),
-                                                             [state_print(log_entry["old_state"].to_s,log_entry["state"].to_s),
-                                                              log_entry["action"].to_s,
-                                                              log_entry["result"].to_s,
-                                                              Time.at(log_entry["timestamp"].to_i).strftime("%H:%M:%S"),
-                                                              pretty_time(@last_time_diff.to_i),
-                                                              pretty_time(@total_time_diff.to_i), node_uuid.to_s], line_color, header_color)
-          @last_time = Time.at(log_entry["timestamp"])
+        [@vmodel, @model].each do
+          |model|
+          model.log.each do
+            |log_entry|
+            @first_time ||= Time.at(log_entry["timestamp"])
+            @last_time ||= Time.at(log_entry["timestamp"])
+            @total_time_diff = (Time.at(log_entry["timestamp"].to_i) - @first_time)
+            @last_time_diff = (Time.at(log_entry["timestamp"].to_i) - @last_time)
+            attr_array << self.class.const_get(:HashPrint).new(%w(State Action Result Time Last Total Node),
+                                                               [state_print(log_entry["old_state"].to_s,log_entry["state"].to_s),
+                                                                log_entry["action"].to_s,
+                                                                log_entry["result"].to_s,
+                                                                Time.at(log_entry["timestamp"].to_i).strftime("%H:%M:%S"),
+                                                                pretty_time(@last_time_diff.to_i),
+                                                                pretty_time(@total_time_diff.to_i), node_uuid.to_s], line_color, header_color)
+            @last_time = Time.at(log_entry["timestamp"])
+          end
         end
         # Return our array of HashPrint
         attr_array

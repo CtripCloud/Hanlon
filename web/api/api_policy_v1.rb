@@ -90,10 +90,15 @@ module Hanlon
           end
 
           def make_callback(active_model, callback_namespace, command_array)
-            callback = active_model.model.callback[callback_namespace]
+            if active_model.vmodel && active_model.vmodel.current_state != active_model.vmodel.final_state
+              model = active_model.vmodel
+            else
+              model = active_model.model
+            end
+            callback = model.callback[callback_namespace]
             raise ProjectHanlon::Error::Slice::NoCallbackFound, "Missing callback" unless callback
             node = get_data_ref.fetch_object_by_uuid(:node, active_model.node_uuid)
-            callback_return = active_model.model.callback_init(callback, command_array, node, active_model.uuid, active_model.broker)
+            callback_return = model.callback_init(callback, command_array, node, active_model.uuid, active_model.broker)
             active_model.update_self
             callback_return
           end

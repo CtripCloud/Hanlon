@@ -24,11 +24,6 @@ module ProjectHanlon
       attr_accessor :raid
       attr_accessor :bios
 
-      def update_self
-        puts "----------"
-        p self
-        super
-      end
       # init
       # @param hash [Hash]
       def initialize(hash)
@@ -303,6 +298,11 @@ module ProjectHanlon
 
       def boot_call(node, policy_uuid)
         @node, @policy_uuid = node, policy_uuid
+      end
+
+      def generate_script(name)
+        filepath = template_filepath(name)
+        ERB.new(File.read(filepath)).result(binding)
       end
 
     end

@@ -262,7 +262,12 @@ module ProjectHanlon
         ret
       end
 
-      def generate_script(name)
+      def template_filepath(filename)
+        filepath = File.join(File.dirname(__FILE__), "hp/#{@node.attributes_hash['productname']}/#{filename}.erb")
+        return filepath if File.exists?(filepath)
+        filepath = File.join(File.dirname(__FILE__), "hp/#{filename}.erb")
+        return filepath if File.exists?(filepath)
+        raise ProjectHanlon::Error::Slice::InternalError, "template #{filename} can not found" unless filepath
       end
 
     end

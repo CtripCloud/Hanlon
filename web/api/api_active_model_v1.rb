@@ -79,7 +79,9 @@ module Hanlon
             first_time = nil
             log_entries = []
             index = 0
-            active_model.model.log.each { |log_entry|
+            [active_model.vmodel, active_model.model].each do
+              |model|
+              model.log.each { |log_entry|
               entry_time = Time.at(log_entry["timestamp"])
               entry_time_int = entry_time.to_i
               first_time ||= entry_time
@@ -98,6 +100,7 @@ module Hanlon
               last_time = Time.at(log_entry["timestamp"])
               index = index + 1
             }
+            end
             log_entries
           end
 
