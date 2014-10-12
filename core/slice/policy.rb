@@ -92,6 +92,14 @@ module ProjectHanlon
                   :uuid_is     => 'not_allowed',
                   :required    => true
                 },
+                { :name        => :vmodel_uuid,
+                  :default     => nil,
+                  :short_form  => '-v',
+                  :long_form   => '--vmodel-uuid VMODEL_UUID',
+                  :description => 'The vmodel to attach to the policy.',
+                  :uuid_is     => 'not_allowed',
+                  :required    => true
+                },
                 { :name        => :model_uuid,
                   :default     => nil,
                   :short_form  => '-m',
@@ -139,6 +147,14 @@ module ProjectHanlon
                   :short_form  => '-l',
                   :long_form   => '--label POLICY_LABEL',
                   :description => 'A label to name this policy.',
+                  :uuid_is     => 'required',
+                  :required    => true
+                },
+                { :name        => :vmodel_uuid,
+                  :default     => nil,
+                  :short_form  => '-v',
+                  :long_form   => '--vmodel-uuid VMODEL_UUID',
+                  :description => 'The vmodel to attach to the policy.',
                   :uuid_is     => 'required',
                   :required    => true
                 },
@@ -254,6 +270,7 @@ module ProjectHanlon
         json_data = {
             "template" => options[:template],
             "label" => options[:label],
+            "vmodel_uuid" => options[:vmodel_uuid],
             "model_uuid" => options[:model_uuid],
             "tags" => options[:tags],
             "broker_uuid" => options[:broker_uuid],
@@ -285,6 +302,7 @@ module ProjectHanlon
         # hash that we'll be passing in as the body of the request
         body_hash = {}
         body_hash["label"] = options[:label] if options[:label]
+        body_hash["model_uuid"] = options[:vmodel_uuid] if options[:vmodel_uuid]
         body_hash["model_uuid"] = options[:model_uuid] if options[:model_uuid]
         body_hash["tags"] = options[:tags] if options[:tags]
         body_hash["broker_uuid"] = options[:broker_uuid] if options[:broker_uuid]

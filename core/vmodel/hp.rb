@@ -151,7 +151,7 @@ module ProjectHanlon
 
       # Defines our FSM for this vmodel
         #  For state => {action => state, ..}
-      def fsm_tree
+      def fsm
         {
           :vmodel_init => {
             :mk_call         => :vmodel_init,
@@ -228,14 +228,41 @@ module ProjectHanlon
         }
       end
 
+      # Defines our FSM Meta for this vmodel
+      #  For state => {meta => value, ..}
+      #  For 'file' meta, the first element in the array is an executable script which would be runned in MK
+      def fsm_meta
+        {
+          :vmodel_init => {
+            :max_time => 3600,
+          },
+          :firmware => {
+            :max_time => 3600,
+            :file => ["hpsum.sh"],
+          },
+          :ilo => {
+            :max_time => 3600,
+            :file => ["iloconf.sh", "ilotemp.xml"],
+          },
+          :raid => {
+            :max_time => 3600,
+            :file => ["raidconf.sh", "acu-e.ini", "cloud-raid.ini", "default-raid.ini"],
+          },
+          :bios => {
+            :max_time => 3600,
+            :file => ["biosconf.sh", "biostemp.xml", "conrep.xml", "rebootconf.sh"],
+          },
+        }
+      end
+
       def mk_call(node, policy_uuid)
         super(node, policy_uuid)
         if node.last_state == 'idle'
-          script_list = fsm_meta.fetch(@current_state, {})[:script]
+          script_list = fsm_meta.fetch(@current_state, {})[:file]
           case @current_state
             when :vmodel_init
               # start vmodel from firmware phase
-              script_list = fsm_meta.fetch(:firmware, {})[:script]
+              script_list = fsm_meta.fetch(:firmware, {})[:file]
               ret = [:firmware, {'enabled' => @firmware, 'script' => script_list}]
               fsm_action(:mk_call, :mk_call)
             when :firmware
@@ -248,10 +275,11 @@ module ProjectHanlon
               ret = [:bios, {'enabled' => @bios["enabled"], 'script' => script_list}]
             else
               ret = [:acknowledged, {}]
-            end
-          else
-            ret = [:acknowledged, {}]
           end
+        else
+          ret = [:acknowledged, {}]
+        end
+        ret
       end
 
       def boot_call(node, policy_uuid)

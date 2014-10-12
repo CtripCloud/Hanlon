@@ -43,6 +43,8 @@ module ProjectHanlon
       attr_accessor :mk_kmod_install_list_uri
       attr_accessor :mk_gem_mirror
       attr_accessor :mk_gemlist_uri
+      attr_accessor :mk_nfs_server_ip
+
 
       attr_accessor :image_path
 
@@ -90,6 +92,7 @@ module ProjectHanlon
           'mk_tce_mirror'            => "http://localhost:2157/tinycorelinux",
           'mk_tce_install_list_uri'  => "/tce-install-list",
           'mk_kmod_install_list_uri' => "/kmod-install-list",
+          'mk_nfs_server_ip'         => get_an_ip,
 
           'image_path'               => default_image_path,
 

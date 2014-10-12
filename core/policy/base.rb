@@ -142,7 +142,7 @@ module ProjectHanlon
             vmodel_label = @vmodel ? @vmodel.label.to_s : 'none'
             model_label = @model ? @model.label.to_s : 'none'
             max_num = @maximum_count.to_i == 0 ? '-' : @maximum_count
-            return line_number.to_s, @enabled.to_s, @label, "[#{@tags.join(",")}]", @model.label.to_s, "#{current_count.to_s}/#{max_num}", counter.to_s, @uuid
+            return line_number.to_s, @enabled.to_s, @label, "[#{@tags.join(",")}]", vmodel_label, model_label, "#{current_count.to_s}/#{max_num}", counter.to_s, @uuid
           end
         end
       end

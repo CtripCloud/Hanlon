@@ -19,11 +19,19 @@ module ProjectHanlon
 
 
       def mk_call(node)
-        model.mk_call(node, @uuid)
+        if vmodel && vmodel.current_state != vmodel.final_state
+          vmodel.mk_call(node, @uuid)
+        elsif model
+          model.mk_call(node, @uuid)
+        end
       end
 
       def boot_call(node)
-        model.boot_call(node, @uuid)
+        if vmodel && vmodel.current_state != vmodel.final_state
+          vmodel.boot_call(node, @uuid)
+        elsif model
+          model.boot_call(node, @uuid)
+        end
       end
 
     end

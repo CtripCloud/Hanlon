@@ -83,12 +83,10 @@ module ProjectHanlon
         self.send(callback_namespace)
       end
 
-      def fsm_tree
+      def fsm
         # Overridden with custom tree within child vmodel
         {}
       end
-
-      alias fsm fsm_tree
 
       def fsm_action(action, method)
         # We only change state if we have a node bound
@@ -96,7 +94,7 @@ module ProjectHanlon
           old_state = @current_state
           old_state = :init unless old_state
           begin
-            if fsm[@current_state][action] != nil
+            if fsm[@current_state][action]
               @current_state = fsm[@current_state][action]
             else
               @current_state = fsm[@current_state][:else]
