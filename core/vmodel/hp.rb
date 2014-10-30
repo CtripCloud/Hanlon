@@ -22,7 +22,7 @@ module ProjectHanlon
       def callback
         {
           'firmware' => :firmware_call,
-          'bmc'      => :ilo_call,
+          'ilo'      => :ilo_call,
           'raid'     => :raid_call,
           'bios'     => :bios_call,
         }
@@ -39,15 +39,15 @@ module ProjectHanlon
             @result = "Acknowledged firmware update complete"
             fsm_action(:firmware_end, :firmware)
             return "ok"
-          when "script"
+          when "file"
             name = @args_array.pop
             if name
-              @result = "Replied with script for firmware update: #{name}"
-              fsm_action(:firmware_script, :firmware)
-              return generate_script(name)
+              @result = "Replied with file for firmware update: #{name}"
+              fsm_action(:firmware_file, :firmware)
+              return generate_file(name)
             else
-              logger.error "script name is nil"
-              return "error: request script without file name"
+              logger.error "file name can not be empty"
+              return "error: request file without name"
             end
             return "ok"
           when "skip"
@@ -70,15 +70,15 @@ module ProjectHanlon
             @result = "Acknowledged iLO configuration complete"
             fsm_action(:ilo_end, :ilo)
             return "ok"
-          when "script"
+          when "file"
             name = @args_array.pop
             if name
-              @result = "Replied with script for iLO configuration: #{name}"
-              fsm_action(:ilo_script, :ilo)
-              return generate_script(name)
+              @result = "Replied with file for iLO configuration: #{name}"
+              fsm_action(:ilo_file, :ilo)
+              return generate_file(name)
             else
-              logger.error "script name is nil"
-              return "error: request script without file name"
+              logger.error "file name is nil"
+              return "error: request file without name"
             end
           when "skip"
             @result = "acknowledged skip iLO configuration"
@@ -100,15 +100,15 @@ module ProjectHanlon
             @result = "Acknowledged RAID configuration complete "
             fsm_action(:raid_end, :raid)
             return "ok"
-          when "script"
+          when "file"
             name = @args_array.pop
             if name
-              @result = "Replied with script for RAID configuration: #{name}"
-              fsm_action(:raid_script, :raid)
-              return generate_script(name)
+              @result = "Replied with file for RAID configuration: #{name}"
+              fsm_action(:raid_file, :raid)
+              return generate_file(name)
             else
-              logger.error "script name is nil"
-              return "error: request script without file name"
+              logger.error "file name is nil"
+              return "error: request file without file name"
             end
           when "skip"
             @result = "Acknowledged skip RAID configuration"
@@ -130,15 +130,15 @@ module ProjectHanlon
             @result = "Acknowledged BIOS configuration complete"
             fsm_action(:bios_end, :bios)
             return "ok"
-          when "script"
+          when "file"
             name = @args_array.pop
             if name
-              @result = "Replied with script for BIOS configuration: #{name}"
-              fsm_action(:bios_script, :bios)
-              return generate_script(name)
+              @result = "Replied with file for BIOS configuration: #{name}"
+              fsm_action(:bios_file, :bios)
+              return generate_file(name)
             else
-              logger.error "script name is nil"
-              return "error: request script without file name"
+              logger.error "file name is nil"
+              return "error: request file without file name"
             end
           when "skip"
             @result = "Acknowledged skip BIOS configuration"
@@ -157,9 +157,9 @@ module ProjectHanlon
             :mk_call         => :vmodel_init,
             :boot_call       => :vmodel_init,
             :firmware_start  => :firmware,
-            :firmware_script => :firmware,
-            :firmware_end    => :baking,
-            :firmware_skip   => :baking,
+            :firmware_file   => :firmware,
+            :firmware_end    => :ilo,
+            :firmware_skip   => :ilo,
             :timeout         => :timeout_error,
             :error           => :error_catch,
             :else            => :vmodel_init
@@ -168,9 +168,9 @@ module ProjectHanlon
             :mk_call         => :firmware,
             :boot_call       => :firmware,
             :firmware_start  => :firmware,
-            :firmware_script => :firmware,
-            :firmware_end    => :baking,
-            :firmware_skip   => :baking,
+            :firmware_file   => :firmware,
+            :firmware_end    => :ilo,
+            :firmware_skip   => :ilo,
             :firmwaretimeout => :timeout_error,
             :error           => :error_catch,
             :else            => :firmware
@@ -179,7 +179,7 @@ module ProjectHanlon
             :mk_call     => :ilo,
             :boot_call   => :ilo,
             :ilo_start   => :ilo,
-            :ilo_script  => :ilo,
+            :ilo_file    => :ilo,
             :ilo_end     => :raid,
             :ilo_skip    => :raid,
             :ilo_timeout => :timeout_error,
@@ -190,7 +190,7 @@ module ProjectHanlon
             :mk_call      => :raid,
             :boot_call    => :raid,
             :raid_start   => :raid,
-            :raid_script  => :raid,
+            :raid_file    => :raid,
             :raid_end     => :bios,
             :raid_skip    => :bios,
             :raid_timeout => :timeout_error,
@@ -201,9 +201,9 @@ module ProjectHanlon
             :mk_call      => :bios,
             :boot_call    => :bios,
             :bios_start   => :bios,
-            :bios_script  => :bios,
+            :bios_file    => :bios,
             :bios_end     => :vmodel_complete,
-            :bios_skip    => :reset,
+            :bios_skip    => :vmodel_complete,
             :bios_timeout => :timeout_error,
             :error        => :error_catch,
             :else         => :bios
@@ -230,7 +230,7 @@ module ProjectHanlon
 
       # Defines our FSM Meta for this vmodel
       #  For state => {meta => value, ..}
-      #  For 'file' meta, the first element in the array is an executable script which would be runned in MK
+      #  For 'file' meta, the first element in 'file' is an executable script which would be runned in MK
       def fsm_meta
         {
           :vmodel_init => {
@@ -246,11 +246,11 @@ module ProjectHanlon
           },
           :raid => {
             :max_time => 3600,
-            :file => ["raidconf.sh", "acu-e.ini", "cloud-raid.ini", "default-raid.ini"],
+            :file => ["raidconf.sh", "default-raid.ini"],
           },
           :bios => {
             :max_time => 3600,
-            :file => ["biosconf.sh", "biostemp.xml", "conrep.xml", "rebootconf.sh"],
+            :file => ["biosconf.sh", "biostemp.xml", "conrep.xml"],
           },
         }
       end
@@ -258,21 +258,21 @@ module ProjectHanlon
       def mk_call(node, policy_uuid)
         super(node, policy_uuid)
         if node.last_state == 'idle'
-          script_list = fsm_meta.fetch(@current_state, {})[:file]
+          file_list = fsm_meta.fetch(@current_state, {})[:file]
           case @current_state
             when :vmodel_init
               # start vmodel from firmware phase
-              script_list = fsm_meta.fetch(:firmware, {})[:file]
-              ret = [:firmware, {'enabled' => @firmware, 'script' => script_list}]
+              file_list = fsm_meta.fetch(:firmware, {})[:file]
+              ret = [:firmware, {'enabled' => @firmware, 'file' => file_list}]
               fsm_action(:mk_call, :mk_call)
             when :firmware
-              ret = [:firmware, {'enabled' => @firmware, 'script' => script_list}]
+              ret = [:firmware, {'enabled' => @firmware, 'file' => file_list}]
             when :ilo
-              ret = [:ilo, {'enabled' => @bmc["enabled"], 'script' => script_list}]
+              ret = [:ilo, {'enabled' => @bmc["enabled"], 'file' => file_list}]
             when :raid
-              ret = [:raid, {'enabled' => @raid["enabled"], 'script' => script_list}]
+              ret = [:raid, {'enabled' => @raid["enabled"], 'file' => file_list}]
             when :bios
-              ret = [:bios, {'enabled' => @bios["enabled"], 'script' => script_list}]
+              ret = [:bios, {'enabled' => @bios["enabled"], 'file' => file_list}]
             else
               ret = [:acknowledged, {}]
           end

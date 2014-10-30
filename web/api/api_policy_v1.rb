@@ -237,18 +237,18 @@ module Hanlon
                   optional :name, type: String, desc: "The name of vmodel script."
                 end
                 get do
-                  node_uuid = params[:uuid].upcase if params[:uuid]
+                  uuid = params[:uuid].upcase if params[:uuid]
                   mac_id = params[:mac_id].upcase.split("_") if params[:mac_id]
-                  raise ProjectHanlon::Error::Slice::MissingArgument, "At least one of the optional arguments (uuid or mac_id) must be specified" unless ((node_uuid && node_uuid.length > 0) || (mac_id && !(mac_id.empty?)))
-                  mac_id.collect! {|x| x.upcase.gsub(':', '') } if mac_id
+                  raise ProjectHanlon::Error::Slice::MissingArgument, "At least one of the optional arguments (uuid or mac_id) must be specified" unless ((uuid && uuid.length > 0) || (mac_id && !(mac_id.empty?)))
                   namespace_and_args = params[:namespace_and_args].split('/')
                   callback_namespace = namespace_and_args.shift
                   raise ProjectHanlon::Error::Slice::MissingCallbackNamespace, "Missing callback namespace" unless SLICE_REF.validate_arg(callback_namespace)
                   namespace_and_args << params[:name] if params[:name]
                   engine       = ProjectHanlon::Engine.instance
+                  node = engine.lookup_node_by_hw_id({:uuid => uuid, :mac_id => mac_id})
                   active_model = nil
-                  engine.get_active_models.each { |am| active_model = am if am.node_uuid == node_uuid }
-                  raise ProjectHanlon::Error::Slice::InvalidUUID, "Cannot Find Active Model with Node UUID: [#{node_uuid}]" unless active_model
+                  engine.get_active_models.each { |am| active_model = am if am.node_uuid == node.uuid }
+                  raise ProjectHanlon::Error::Slice::InvalidUUID, "Cannot Find Active Model with Node UUID: [#{node.uuid}]" unless active_model
                   env['api.format'] = :text
                   make_callback(active_model, callback_namespace, namespace_and_args)
                 end

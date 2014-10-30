@@ -75,7 +75,7 @@ module ProjectHanlon
         from_hash(hash) unless hash == nil
       end
 
-      def callback_init(callback_namespace, args_array, node, policy_uuid)
+      def callback_init(callback_namespace, args_array, node, policy_uuid, broker)
         @args_array = args_array
         @node = node
         @policy_uuid = policy_uuid
@@ -298,7 +298,7 @@ module ProjectHanlon
         @node, @policy_uuid = node, policy_uuid
       end
 
-      def generate_script(name)
+      def generate_file(name)
         filepath = template_filepath(name)
         ERB.new(File.read(filepath)).result(binding)
       end
